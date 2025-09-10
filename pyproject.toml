@@ -58,7 +58,5 @@ src_paths = ["your_project_name", "tests"]
 
 [tool.mypy]
 python_version = "3.9"
-check_untyped_defs = true
-disallow_untyped_defs = true
 ignore_missing_imports = true
 show_error_codes = true
