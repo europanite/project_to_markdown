@@ -598,7 +598,9 @@ def main() -> int:
             ]
             if lang == "python":
                 meta.append(
-                    f"Py: funcs={r['py_funcs']} classes={r['py_classes']} complexity≈{r['py_complex']}"
+                    f"Py: funcs={r['py_funcs']} \
+                    classes={r['py_classes']} \
+                    complexity≈{r['py_complex']}"
                     )
             lines.append("- " + " | ".join(meta))
         else:
