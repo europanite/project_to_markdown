@@ -144,9 +144,7 @@ COMMENT_PREFIXES = {
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description=(
-            "Extract project files into one Markdown for LLM discussion."
-        )
+        description=("Extract project files into one Markdown for LLM discussion.")
     )
     p.add_argument("-r", "--root", required=True, help="Project root directory")
     p.add_argument(
@@ -185,8 +183,7 @@ def parse_args():
         choices=["fence", "render", "skip"],
         default="fence",
         help=(
-            "How to include project .md files: fence as code, render (demote "
-            "headings), or skip"
+            "How to include project .md files: fence as code, render (demote " "headings), or skip"
         ),
     )
     p.add_argument(
@@ -342,9 +339,7 @@ def auto_summary(text, lang, max_len=200):
                     return first[0][:max_len]
         funcs = len(re.findall(r"^\s*def\s+\w+\(", text, flags=re.MULTILINE))
         classes = len(re.findall(r"^\s*class\s+\w+\(", text, flags=re.MULTILINE))
-        return (
-            f"Python module with {funcs} functions and {classes} classes."
-        )[:max_len]
+        return (f"Python module with {funcs} functions and {classes} classes.")[:max_len]
     for line in text.splitlines():
         if line.strip():
             return line.strip()[:max_len]
@@ -413,9 +408,7 @@ def detect_dependencies(root):
     if pyp.exists():
         try:
             txt = pyp.read_text(encoding="utf-8", errors="ignore")
-            m = re.findall(
-                r'(?m)^\s*([A-Za-z0-9_.-]+)\s*=\s*["\']?([^"\']+)["\']?', txt
-            )
+            m = re.findall(r'(?m)^\s*([A-Za-z0-9_.-]+)\s*=\s*["\']?([^"\']+)["\']?', txt)
             if m:
                 deps["pyproject_toml_preview"] = [f"{k}={v}" for k, v in m][:50]
         except Exception:
@@ -517,9 +510,7 @@ def main():
         loc = len(text.splitlines()) if text else 0
         sloc = sloc_of_text(text, lang) if text else 0
         todos = count_todos(text) if text else 0
-        mtime = datetime.fromtimestamp(p.stat().st_mtime).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        mtime = datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         digest = sha1_of_text(text) if text else ""
 
         py_funcs = py_classes = py_complex = 0
@@ -558,12 +549,8 @@ def main():
 
     # Overview pieces
     deps = detect_dependencies(root)
-    largest = sorted(file_records, key=lambda r: r["nbytes"], reverse=True)[
-        : args.top_n_largest
-    ]
-    longest = sorted(file_records, key=lambda r: r["loc"], reverse=True)[
-        : args.top_n_largest
-    ]
+    largest = sorted(file_records, key=lambda r: r["nbytes"], reverse=True)[: args.top_n_largest]
+    longest = sorted(file_records, key=lambda r: r["loc"], reverse=True)[: args.top_n_largest]
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     total_loc = sum(r["loc"] for r in file_records)
@@ -582,9 +569,7 @@ def main():
     lines.append(f"- Files: **{len(file_records)}**")
     lines.append(f"- Total size: **{total_bytes} bytes**")
     if args.with_metrics:
-        lines.append(
-            f"- Total LOC: {total_loc} | SLOC: {total_sloc} | TODOs: {total_todos}"
-        )
+        lines.append(f"- Total LOC: {total_loc} | SLOC: {total_sloc} | TODOs: {total_todos}")
     lines.append("")
 
     # Language mix
@@ -731,4 +716,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
