@@ -1,6 +1,6 @@
-import sys
-import runpy
 import importlib
+import runpy
+import sys
 from pathlib import Path
 
 THIS_DIR = Path(__file__).resolve().parent
