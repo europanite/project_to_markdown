@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "your_project_name"
+version = "0.1.0"
+description = "Your project description"
+authors = [
+  { name = "Masaaki Ikeda", email = "example@example.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+  "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "ruff",
+  "black",
+  "isort",
+  "mypy",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["your_project_name"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["your_project_name", "tests"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+show_error_codes = true

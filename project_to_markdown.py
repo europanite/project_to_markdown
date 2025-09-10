@@ -1,21 +1,3 @@
-#!/usr/bin/env python3
-"""
-project_to_markdown.py
-
-Dump an entire project into one Markdown file optimized for long-context LLM discussion (e.g., ChatGPT).
-
-What's new in this build:
-- Hidden files are INCLUDED by default.
-- New option `--exclude-hidden` to omit dotfiles/directories when desired.
-- Everything else: fenced content (including .md), overview, metrics, TOC, (optional) Python import graph,
-  truncation markers, dynamic default output filename (<project>_YYYYMMDD_HHMMSS.md).
-
-Usage (typical):
-    python project_to_markdown.py -r /path/to/project
-    python project_to_markdown.py -r . --exclude-hidden
-    python project_to_markdown.py -r . --mermaid-import-graph --no-summaries
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -29,7 +11,26 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Set, Tuple
+
+"""
+project_to_markdown.py
+
+Dump an entire project into one Markdown file optimized for
+long-context LLM discussion (e.g., ChatGPT).
+
+What's new in this build:
+- Hidden files are INCLUDED by default.
+- New option `--exclude-hidden` to omit dotfiles/directories when desired.
+- Everything else: fenced content (including .md), overview, metrics, TOC,
+  (optional) Python import graph, truncation markers, dynamic default output
+  filename (<project>_YYYYMMDD_HHMMSS.md).
+
+Usage (typical):
+    python project_to_markdown.py -r /path/to/project
+    python project_to_markdown.py -r . --exclude-hidden
+    python project_to_markdown.py -r . --mermaid-import-graph --no-summaries
+"""
+
 
 # -------------------------------------------------------------------
 # Configuration
@@ -51,7 +52,7 @@ DEFAULT_IGNORES = [
 ]
 
 # File extension -> code fence language
-EXT_TO_LANG: Dict[str, str] = {
+EXT_TO_LANG = {
     ".py": "python",
     ".ipynb": "json",
     ".js": "javascript",
@@ -136,32 +137,65 @@ COMMENT_PREFIXES = {
     "groovy": "//",
 }
 
+
 # -------------------------------------------------------------------
 # CLI
 # -------------------------------------------------------------------
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Extract project files into one Markdown for LLM discussion.")
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description=("Extract project files into one Markdown for LLM discussion.")
+    )
     p.add_argument("-r", "--root", required=True, help="Project root directory")
-    p.add_argument("-o", "--output", default=None, help="Output markdown file (default: <project>_<timestamp>.md)")
-    p.add_argument("--ignore", action="append", default=[], help="Ignore patterns (fnmatch, supports **)")
+    p.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="Output markdown file (default: <project>_<timestamp>.md)",
+    )
+    p.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        help="Ignore patterns (fnmatch, supports **)",
+    )
     # Hidden files are included by default. Use --exclude-hidden to turn them off.
     p.add_argument(
         "--exclude-hidden",
         action="store_true",
         help="Exclude hidden files/dirs (those starting with a dot)",
     )
-    p.add_argument("--max-bytes-per-file", type=int, default=300_000, help="Max bytes per file to include")
-    p.add_argument("--only-ext", action="append", default=[], help="Whitelist extensions (repeatable)")
+    p.add_argument(
+        "--max-bytes-per-file",
+        type=int,
+        default=300_000,
+        help="Max bytes per file to include",
+    )
+    p.add_argument(
+        "--only-ext",
+        action="append",
+        default=[],
+        help="Whitelist extensions (repeatable)",
+    )
     p.add_argument("--title", default=None, help="Top-level title in markdown")
     p.add_argument(
         "--md-policy",
         choices=["fence", "render", "skip"],
         default="fence",
-        help="How to include project .md files: fence as code, render (demote headings), or skip",
+        help=("How to include project .md files: fence as code, render (demote headings), or skip"),
     )
-    p.add_argument("--top-n-largest", type=int, default=12, help="Show top-N largest/longest files")
-    p.add_argument("--mermaid-import-graph", action="store_true", help="Emit Mermaid graph for Python imports")
+    p.add_argument(
+        "--top-n-largest",
+        type=int,
+        default=12,
+        help="Show top-N largest/longest files",
+    )
+    p.add_argument(
+        "--mermaid-import-graph",
+        action="store_true",
+        help="Emit Mermaid graph for Python imports",
+    )
     p.add_argument("--no-metrics", dest="with_metrics", action="store_false")
     p.add_argument("--no-summaries", dest="with_summaries", action="store_false")
     p.set_defaults(with_metrics=True, with_summaries=True)
@@ -176,27 +210,33 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
+
 # -------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------
 
-def norm_patterns(patterns: Iterable[str]) -> List[str]:
+
+def norm_patterns(patterns):
     return [pat.strip() for pat in patterns if pat.strip()]
 
-def is_hidden(path: Path) -> bool:
+
+def is_hidden(path):
     # Treat anything with a dot-leading segment as hidden (except . and ..)
     return any(part.startswith(".") and part not in (".", "..") for part in path.parts)
 
-def matches_ignore(rel_path: Path, patterns: List[str]) -> bool:
+
+def matches_ignore(rel_path, patterns):
     s = str(rel_path).replace(os.sep, "/")
     return any(fnmatch.fnmatch(s, pat) for pat in patterns)
 
-def detect_language(path: Path) -> str:
+
+def detect_language(path):
     if path.name == "Dockerfile":
         return "dockerfile"
     return EXT_TO_LANG.get(path.suffix, "")
 
-def is_probably_binary(sample: bytes) -> bool:
+
+def is_probably_binary(sample):
     if b"\x00" in sample:
         return True
     try:
@@ -205,7 +245,8 @@ def is_probably_binary(sample: bytes) -> bool:
     except UnicodeDecodeError:
         return True
 
-def read_text_safely(p: Path, max_bytes: int) -> Tuple[str, bool, int]:
+
+def read_text_safely(p, max_bytes):
     data = p.read_bytes()
     nbytes = len(data)
     truncated = False
@@ -217,11 +258,13 @@ def read_text_safely(p: Path, max_bytes: int) -> Tuple[str, bool, int]:
     text = data.decode("utf-8", errors="replace")
     return (text, truncated, nbytes)
 
-def sha1_of_text(s: str) -> str:
+
+def sha1_of_text(s):
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
-def sloc_of_text(text: str, lang: str) -> int:
-    """Very rough SLOC: non-empty lines that do not start with the single-line comment token."""
+
+def sloc_of_text(text, lang):
+    """Very rough SLOC: non-empty lines not starting with single-line comment."""
     com = COMMENT_PREFIXES.get(lang or "", None)
     cnt = 0
     for line in text.splitlines():
@@ -233,10 +276,12 @@ def sloc_of_text(text: str, lang: str) -> int:
         cnt += 1
     return cnt
 
-def count_todos(text: str) -> int:
+
+def count_todos(text):
     return len(re.findall(r"\bTODO\b|FIXME|XXX", text, flags=re.IGNORECASE))
 
-def extract_brief_description(text: str, lang: str, max_lines: int = 5) -> str:
+
+def extract_brief_description(text, lang, max_lines=5):
     """
     Try to extract a short description from leading comments or docstring.
     """
@@ -253,7 +298,7 @@ def extract_brief_description(text: str, lang: str, max_lines: int = 5) -> str:
         lines = []
         for line in text.splitlines():
             if line.strip().startswith(prefix):
-                cleaned = line.strip()[len(prefix):].lstrip()
+                cleaned = line.strip()[len(prefix) :].lstrip()
                 lines.append(cleaned)
                 if len(lines) >= max_lines:
                     break
@@ -267,7 +312,8 @@ def extract_brief_description(text: str, lang: str, max_lines: int = 5) -> str:
             return out
     return "\n".join(text.splitlines()[:2]).strip()
 
-def auto_summary(text: str, lang: str, max_len: int = 200) -> str:
+
+def auto_summary(text, lang, max_len=200):
     """
     Deterministic one-liner summaries (no AI):
       - markdown: first heading line
@@ -292,13 +338,14 @@ def auto_summary(text: str, lang: str, max_len: int = 200) -> str:
                     return first[0][:max_len]
         funcs = len(re.findall(r"^\s*def\s+\w+\(", text, flags=re.MULTILINE))
         classes = len(re.findall(r"^\s*class\s+\w+\(", text, flags=re.MULTILINE))
-        return f"Python module with {funcs} functions and {classes} classes."[:max_len]
+        return (f"Python module with {funcs} functions and {classes} classes.")[:max_len]
     for line in text.splitlines():
         if line.strip():
             return line.strip()[:max_len]
     return ""
 
-def demote_markdown_headings(text: str, levels: int = 3) -> str:
+
+def demote_markdown_headings(text, levels=3):
     if levels <= 0:
         return text
     out_lines = []
@@ -311,10 +358,11 @@ def demote_markdown_headings(text: str, levels: int = 3) -> str:
             out_lines.append(line)
     return "\n".join(out_lines)
 
-def build_tree(root: Path, files: List[Path]) -> str:
+
+def build_tree(root, files):
     """Pretty-prints a tree that reflects only the included files."""
     rel_files = [f.relative_to(root) for f in files]
-    dirs: Set[Path] = set()
+    dirs = set()
     for f in rel_files:
         parent = f.parent
         while parent != Path("."):
@@ -330,20 +378,23 @@ def build_tree(root: Path, files: List[Path]) -> str:
         lines.append(indent + branch + name)
     return "```\n" + "\n".join(lines) + "\n```"
 
-def slugify(path_like: str) -> str:
+
+def slugify(path_like):
     s = re.sub(r"[^A-Za-z0-9/_\-.]+", "-", path_like)
     s = s.strip("-").replace("/", "-")
     return s or "file"
 
-def detect_dependencies(root: Path) -> Dict[str, List[str]]:
+
+def detect_dependencies(root):
     """Best-effort dependency sniffing (no lock/resolution)."""
-    deps: Dict[str, List[str]] = {}
+    deps = {}
     # requirements.txt
     req = root / "requirements.txt"
     if req.exists():
         try:
             pkgs = []
-            for line in req.read_text(encoding="utf-8", errors="ignore").splitlines():
+            txt = req.read_text(encoding="utf-8", errors="ignore")
+            for line in txt.splitlines():
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
@@ -374,9 +425,10 @@ def detect_dependencies(root: Path) -> Dict[str, List[str]]:
             pass
     return deps
 
-def python_imports(text: str) -> Set[str]:
+
+def python_imports(text):
     """Very naive import parser used only for a best-effort graph."""
-    mods: Set[str] = set()
+    mods = set()
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -391,16 +443,19 @@ def python_imports(text: str) -> Set[str]:
             mods.add(first.split(".")[0])
     return mods
 
-def simple_cyclomatic_complexity_py(text: str) -> int:
+
+def simple_cyclomatic_complexity_py(text):
     """Super-naive cyclomatic complexity: 1 + count of branching keywords."""
     keywords = r"\b(if|elif|for|while|and|or|try|except|with|case)\b"
     return 1 + len(re.findall(keywords, text))
+
 
 # -------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------
 
-def main() -> int:
+
+def main():
     args = parse_args()
     root = Path(args.root).resolve()
     if not root.exists() or not root.is_dir():
@@ -409,14 +464,15 @@ def main() -> int:
 
     ignore_patterns = norm_patterns(DEFAULT_IGNORES + args.ignore)
 
-    # Walk the tree; by default we INCLUDE hidden entries. If --exclude-hidden is set,
-    # we drop hidden dirs and files (unless they pass explicit ignore/only-ext logic separately).
-    files: List[Path] = []
+    # Walk the tree; by default we INCLUDE hidden entries. If --exclude-hidden is
+    # set, we drop hidden dirs and files (unless they pass explicit ignore/only-ext
+    # logic separately).
+    files = []
     for dirpath, dirnames, filenames in os.walk(root):
         dp = Path(dirpath)
         rel_dir = dp.relative_to(root)
 
-        def keep_dir(dname: str) -> bool:
+        def keep_dir(dname):
             if matches_ignore(rel_dir / dname, ignore_patterns):
                 return False
             if args.exclude_hidden and dname.startswith("."):
@@ -441,9 +497,9 @@ def main() -> int:
 
     # Collect per-file info
     total_bytes = 0
-    lang_counter: Counter = Counter()
-    file_records: List[Dict[str, object]] = []
-    py_import_graph: Dict[str, Set[str]] = defaultdict(set)
+    lang_counter = Counter()  # type: ignore[var-annotated]
+    file_records = []
+    py_import_graph = defaultdict(set)
 
     for p in files:
         lang = detect_language(p)
@@ -487,7 +543,8 @@ def main() -> int:
         if lang == "python" and text:
             imports = python_imports(text)
             if imports:
-                py_import_graph[str(p.relative_to(root))].update(imports)
+                rel_key = str(p.relative_to(root))
+                py_import_graph[rel_key].update(imports)
 
     file_records.sort(key=lambda r: str(r["path"]).lower())
 
@@ -497,12 +554,12 @@ def main() -> int:
     longest = sorted(file_records, key=lambda r: r["loc"], reverse=True)[: args.top_n_largest]
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    total_loc = sum(r["loc"] for r in file_records)  # type: ignore[index]
-    total_sloc = sum(r["sloc"] for r in file_records)  # type: ignore[index]
-    total_todos = sum(r["todos"] for r in file_records)  # type: ignore[index]
+    total_loc = sum(r["loc"] for r in file_records)
+    total_sloc = sum(r["sloc"] for r in file_records)
+    total_todos = sum(r["todos"] for r in file_records)
 
     # Compose Markdown
-    lines: List[str] = []
+    lines = []
     title = args.title or f"Project Export: {root.name}"
     lines.append(f"<!-- GENERATED at {now} -->")
     lines.append(f"# {title}\n")
@@ -548,7 +605,7 @@ def main() -> int:
 
     # Project tree
     lines.append("### Project tree (included subset)")
-    lines.append(build_tree(root, [root / r["path"] for r in file_records]))  # type: ignore[index]
+    lines.append(build_tree(root, [root / r["path"] for r in file_records]))
     lines.append("")
 
     # TOC
@@ -564,10 +621,11 @@ def main() -> int:
         lines.append("```mermaid")
         lines.append("graph LR")
         for file_path, imports in py_import_graph.items():
-            file_node = slugify(file_path)
+            file_path_str = str(file_path)
+            file_node = slugify(file_path_str)
             for mod in sorted(imports):
                 mod_node = slugify(f"mod-{mod}")
-                lines.append(f'  {file_node}["{file_path}"] --> {mod_node}["{mod}"]')
+                lines.append(f'  {file_node}["{file_path_str}"] --> {mod_node}["{mod}"]')
         lines.append("```")
         lines.append("")
 
@@ -577,12 +635,12 @@ def main() -> int:
     for i, r in enumerate(file_records, start=1):
         rel = str(r["path"])
         anchor = slugify(rel)
-        lang = r["lang"]  # type: ignore[index]
-        text = r["text"]  # type: ignore[index]
-        truncated = r["truncated"]  # type: ignore[index]
-        nbytes = r["nbytes"]  # type: ignore[index]
+        lang = r["lang"]
+        text = r["text"]
+        truncated = r["truncated"]
+        nbytes = r["nbytes"]
 
-        lines.append(f"<a id=\"{anchor}\"></a>")
+        lines.append(f'<a id="{anchor}"></a>')
         lines.append(f"### {i}. `{rel}`")
         # Per-file metrics
         if args.with_metrics:
@@ -595,19 +653,24 @@ def main() -> int:
                 f"SHA1: {str(r['sha1'])[:12]}",
             ]
             if lang == "python":
-                meta.append(f"Py: funcs={r['py_funcs']} classes={r['py_classes']} complexity≈{r['py_complex']}")
+                meta.append(
+                    "Py: "
+                    f"funcs={r['py_funcs']} "
+                    f"classes={r['py_classes']} "
+                    f"complexity≈{r['py_complex']}"
+                )
             lines.append("- " + " | ".join(meta))
         else:
             lines.append(f"- Size: {nbytes} bytes")
 
         # Brief & Auto Summary
         if text:
-            brief = extract_brief_description(text, lang)  # type: ignore[arg-type]
+            brief = extract_brief_description(text, lang)
             if brief:
                 lines.append("\n#### Brief")
                 lines.append(brief)
             if args.with_summaries:
-                s = auto_summary(text, lang)  # type: ignore[arg-type]
+                s = auto_summary(text, lang)
                 if s:
                     lines.append("\n#### Auto Summary")
                     lines.append(s)
@@ -652,6 +715,7 @@ def main() -> int:
     out_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"[OK] Wrote: {out_path}")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
