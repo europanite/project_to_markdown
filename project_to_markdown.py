@@ -144,6 +144,7 @@ COMMENT_PREFIXES = {
 # CLI
 # -------------------------------------------------------------------
 
+
 def parse_args():
     p = argparse.ArgumentParser(
         description=("Extract project files into one Markdown for LLM discussion.")
@@ -184,9 +185,7 @@ def parse_args():
         "--md-policy",
         choices=["fence", "render", "skip"],
         default="fence",
-        help=(
-            "How to include project .md files: fence as code, render (demote headings), or skip"
-        ),
+        help=("How to include project .md files: fence as code, render (demote headings), or skip"),
     )
     p.add_argument(
         "--top-n-largest",
@@ -217,6 +216,7 @@ def parse_args():
 # -------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------
+
 
 def norm_patterns(patterns):
     return [pat.strip() for pat in patterns if pat.strip()]
@@ -410,9 +410,7 @@ def detect_dependencies(root):
     if pyp.exists():
         try:
             txt = pyp.read_text(encoding="utf-8", errors="ignore")
-            m = re.findall(
-                r'(?m)^\s*([A-Za-z0-9_.-]+)\s*=\s*["\']?([^"\']+)["\']?', txt
-            )
+            m = re.findall(r'(?m)^\s*([A-Za-z0-9_.-]+)\s*=\s*["\']?([^"\']+)["\']?', txt)
             if m:
                 deps["pyproject_toml_preview"] = [f"{k}={v}" for k, v in m][:50]
         except Exception:
@@ -457,6 +455,7 @@ def simple_cyclomatic_complexity_py(text):
 # -------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------
+
 
 def main():
     args = parse_args()
@@ -553,12 +552,8 @@ def main():
 
     # Overview pieces
     deps = detect_dependencies(root)
-    largest = sorted(file_records, key=lambda r: r["nbytes"], reverse=True)[
-        : args.top_n_largest
-    ]
-    longest = sorted(file_records, key=lambda r: r["loc"], reverse=True)[
-        : args.top_n_largest
-    ]
+    largest = sorted(file_records, key=lambda r: r["nbytes"], reverse=True)[: args.top_n_largest]
+    longest = sorted(file_records, key=lambda r: r["loc"], reverse=True)[: args.top_n_largest]
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     total_loc = sum(r["loc"] for r in file_records)
@@ -577,9 +572,7 @@ def main():
     lines.append(f"- Files: **{len(file_records)}**")
     lines.append(f"- Total size: **{total_bytes} bytes**")
     if args.with_metrics:
-        lines.append(
-            f"- Total LOC: {total_loc} | SLOC: {total_sloc} | TODOs: {total_todos}"
-        )
+        lines.append(f"- Total LOC: {total_loc} | SLOC: {total_sloc} | TODOs: {total_todos}")
     lines.append("")
 
     # Language mix
@@ -634,9 +627,7 @@ def main():
             file_node = slugify(file_path_str)
             for mod in sorted(imports):
                 mod_node = slugify(f"mod-{mod}")
-                lines.append(
-                    f'  {file_node}["{file_path_str}"] --> {mod_node}["{mod}"]'
-                )
+                lines.append(f'  {file_node}["{file_path_str}"] --> {mod_node}["{mod}"]')
         lines.append("```")
         lines.append("")
 
