@@ -1,0 +1,124 @@
+name: CI (Python)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ "**" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]   # 必要なら macos-latest, windows-latest を追加
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+
+    env:
+      # ruff / pytest のキャッシュ書き込み先（書き込み権限のある HOME 配下に固定）
+      RUFF_CACHE_DIR: ${{ runner.temp }}/.ruff_cache
+      PYTEST_ADDOPTS: "-ra"
+      # 覆面プロジェクトでも並列テストを有効化したい場合（pytest-xdistを入れている前提）
+      # PYTEST_ADDOPTS: "-ra -n auto"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      # ---- 依存関係のインストール（pip / poetry のどちらにも対応） ----
+      - name: Detect dependency manager
+        id: depmgr
+        shell: bash
+        run: |
+          if [[ -f "poetry.lock" ]]; then
+            echo "manager=poetry" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=pip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install (pip)
+        if: steps.depmgr.outputs.manager == 'pip'
+        run: |
+          python -m pip install --upgrade pip
+          # dev 用 requirements があれば優先
+          if [[ -f requirements-dev.txt ]]; then
+            pip install -r requirements-dev.txt
+          fi
+          if [[ -f requirements.txt ]]; then
+            pip install -r requirements.txt
+          fi
+          # ここでツール群も確実に入れる（requirements に含まれていれば重複OK）
+          pip install pytest pytest-cov ruff black isort mypy
+
+      - name: Install (poetry)
+        if: steps.depmgr.outputs.manager == 'poetry'
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root
+          # ツール群が dev-dependencies に入っていない場合の保険
+          poetry run pip install pytest-cov ruff black isort mypy
+
+      # ---- Lint（スタイル & 静的解析）----
+      - name: Ruff (lint)
+        run: |
+          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
+            poetry run ruff check .
+          else
+            ruff check .
+          fi
+
+      - name: Black (check only)
+        run: |
+          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
+            poetry run black --check .
+          else
+            black --check .
+          fi
+
+      - name: isort (check only)
+        run: |
+          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
+            poetry run isort --check-only .
+          else
+            isort --check-only .
+          fi
+
+      - name: mypy (type check)
+        # mypy.ini / pyproject.toml が無くても動く。必要に応じて対象パスを調整
+        run: |
+          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
+            poetry run mypy .
+          else
+            mypy .
+          fi
+
+      # ---- テスト ----
+      - name: Pytest
+        run: |
+          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
+            poetry run pytest -q --cov=. --cov-report=xml --cov-report=term
+          else
+            pytest -q --cov=. --cov-report=xml --cov-report=term
+          fi
+
+      # ---- 成果物（カバレッジ）保存 ----
+      - name: Upload coverage xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore
