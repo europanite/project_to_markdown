@@ -1,20 +1,44 @@
-import runpy
 import sys
+import runpy
+import importlib
 from pathlib import Path
 
-# Add the folder that contains BOTH this test and project_to_markdown.py
 THIS_DIR = Path(__file__).resolve().parent
-if str(THIS_DIR) not in sys.path:
-    sys.path.insert(0, str(THIS_DIR))
+REPO_ROOT = THIS_DIR.parent
+
+CANDIDATE_PATHS = [
+    THIS_DIR / "project_to_markdown.py",  
+    REPO_ROOT / "project_to_markdown.py", 
+]
+
+def load_module_and_get_main():
+    for path in CANDIDATE_PATHS:
+        if path.exists():
+            mod_dict = runpy.run_path(str(path))
+            main = mod_dict.get("main")
+            assert callable(main), "main() not found in project_to_markdown.py"
+            return main
+
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("project_to_markdown")
+        return getattr(mod, "main")
+    except Exception as e:
+        raise FileNotFoundError(
+            "project_to_markdown.py not found in tests/ or repo root, "
+            "and import by name failed"
+        ) from e
 
 
 def run_script(tmp_path: Path, args: list[str]) -> Path:
     out = tmp_path / "out.md"
+    full_args = ["prog"] + args + ["-o", str(out)]
     argv_backup = sys.argv[:]
     try:
-        sys.argv = ["prog"] + args + ["-o", str(out)]
-        mod = runpy.run_path(str(THIS_DIR / "project_to_markdown.py"))
-        rc = mod["main"]()
+        sys.argv = full_args
+        main = load_module_and_get_main()
+        rc = main()
         assert rc == 0
         assert out.exists()
         return out
@@ -22,7 +46,7 @@ def run_script(tmp_path: Path, args: list[str]) -> Path:
         sys.argv = argv_backup
 
 
-def test_basic_run_generates_output(tmp_path: Path, monkeypatch):
+def test_basic_run_generates_output(tmp_path: Path):
     proj = tmp_path / "proj"
     proj.mkdir()
 
@@ -34,8 +58,8 @@ def test_basic_run_generates_output(tmp_path: Path, monkeypatch):
     (proj / ".hidden").write_text("secret", encoding="utf-8")
 
     out = run_script(tmp_path, ["-r", str(proj), "--title", "My Export"])
-
     txt = out.read_text(encoding="utf-8")
+
     assert "<!-- GENERATED" in txt
     assert "# My Export" in txt
     assert "## Overview" in txt
@@ -56,13 +80,7 @@ def test_exclude_hidden_and_only_ext(tmp_path: Path):
 
     out = run_script(
         tmp_path,
-        [
-            "-r",
-            str(proj),
-            "--exclude-hidden",
-            "--only-ext",
-            ".txt",
-        ],
+        ["-r", str(proj), "--exclude-hidden", "--only-ext", ".txt"],
     )
     txt = out.read_text(encoding="utf-8")
     assert "`.secret.txt`" not in txt
@@ -73,13 +91,9 @@ def test_exclude_hidden_and_only_ext(tmp_path: Path):
 def test_truncation_marker(tmp_path: Path):
     proj = tmp_path / "proj3"
     proj.mkdir()
-    big = proj / "big.txt"
-    big.write_text("A" * 10_000, encoding="utf-8")
+    (proj / "big.txt").write_text("A" * 10_000, encoding="utf-8")
 
-    out = run_script(
-        tmp_path,
-        ["-r", str(proj), "--max-bytes-per-file", "100"],
-    )
+    out = run_script(tmp_path, ["-r", str(proj), "--max-bytes-per-file", "100"])
     txt = out.read_text(encoding="utf-8")
     assert "[TRUNCATED due to max-bytes-per-file]" in txt
 
@@ -89,10 +103,7 @@ def test_md_policy_render_demotes_headings(tmp_path: Path):
     proj.mkdir()
     (proj / "doc.md").write_text("# H1\n\n## H2\n", encoding="utf-8")
 
-    out = run_script(
-        tmp_path,
-        ["-r", str(proj), "--md-policy", "render"],
-    )
+    out = run_script(tmp_path, ["-r", str(proj), "--md-policy", "render"])
     txt = out.read_text(encoding="utf-8")
     assert "#### H1" in txt
     assert "#### Content (rendered, headings demoted)" in txt
@@ -104,10 +115,7 @@ def test_mermaid_import_graph(tmp_path: Path):
     (proj / "m1.py").write_text("import json\n", encoding="utf-8")
     (proj / "m2.py").write_text("from os import path\n", encoding="utf-8")
 
-    out = run_script(
-        tmp_path,
-        ["-r", str(proj), "--mermaid-import-graph"],
-    )
+    out = run_script(tmp_path, ["-r", str(proj), "--mermaid-import-graph"])
     txt = out.read_text(encoding="utf-8")
     assert "```mermaid" in txt
     assert "graph LR" in txt
