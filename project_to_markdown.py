@@ -143,30 +143,69 @@ COMMENT_PREFIXES = {
 # -------------------------------------------------------------------
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Extract project files into one Markdown for LLM discussion.")
-    p.add_argument("-r", "--root", required=True, help="Project root directory")
-    p.add_argument("-o", "--output", default=None, help="Output markdown file (default: <project>_<timestamp>.md)")
-    p.add_argument("--ignore", action="append", default=[], help="Ignore patterns (fnmatch, supports **)")
+    p = argparse.ArgumentParser(
+        description="Extract project files \
+            into one Markdown for LLM discussion.")
+    p.add_argument("-r",
+                   "--root", 
+                   required=True, 
+                   help="Project root directory")
+    p.add_argument(
+        "-o", 
+        "--output", 
+        default=None, 
+        help="Output markdown file (default: <project>_<timestamp>.md)")
+    p.add_argument(
+        "--ignore", 
+        action="append", 
+        default=[], 
+        help="Ignore patterns (fnmatch, supports **)")
     # Hidden files are included by default. Use --exclude-hidden to turn them off.
     p.add_argument(
         "--exclude-hidden",
         action="store_true",
         help="Exclude hidden files/dirs (those starting with a dot)",
     )
-    p.add_argument("--max-bytes-per-file", type=int, default=300_000, help="Max bytes per file to include")
-    p.add_argument("--only-ext", action="append", default=[], help="Whitelist extensions (repeatable)")
-    p.add_argument("--title", default=None, help="Top-level title in markdown")
+    p.add_argument(
+        "--max-bytes-per-file", 
+        type=int, 
+        default=300_000, 
+        help="Max bytes per file to include")
+    p.add_argument(
+        "--only-ext", 
+        action="append", 
+        default=[], 
+        help="Whitelist extensions (repeatable)")
+    p.add_argument(
+        "--title", 
+        default=None, 
+        help="Top-level title in markdown")
     p.add_argument(
         "--md-policy",
         choices=["fence", "render", "skip"],
         default="fence",
         help="How to include project .md files: fence as code, render (demote headings), or skip",
     )
-    p.add_argument("--top-n-largest", type=int, default=12, help="Show top-N largest/longest files")
-    p.add_argument("--mermaid-import-graph", action="store_true", help="Emit Mermaid graph for Python imports")
-    p.add_argument("--no-metrics", dest="with_metrics", action="store_false")
-    p.add_argument("--no-summaries", dest="with_summaries", action="store_false")
-    p.set_defaults(with_metrics=True, with_summaries=True)
+    p.add_argument(
+        "--top-n-largest", 
+        type=int, 
+        default=12, 
+        help="Show top-N largest/longest files")
+    p.add_argument(
+        "--mermaid-import-graph", 
+        action="store_true", 
+        help="Emit Mermaid graph for Python imports")
+    p.add_argument(
+        "--no-metrics", 
+        dest="with_metrics", 
+        action="store_false")
+    p.add_argument(
+        "--no-summaries", 
+        dest="with_summaries", 
+        action="store_false")
+    p.set_defaults(
+        with_metrics=True, 
+        with_summaries=True)
 
     args = p.parse_args()
 
