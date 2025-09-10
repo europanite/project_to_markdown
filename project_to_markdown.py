@@ -597,7 +597,9 @@ def main() -> int:
                 f"SHA1: {str(r['sha1'])[:12]}",
             ]
             if lang == "python":
-                meta.append(f"Py: funcs={r['py_funcs']} classes={r['py_classes']} complexity≈{r['py_complex']}")
+                meta.append(
+                    f"Py: funcs={r['py_funcs']} classes={r['py_classes']} complexity≈{r['py_complex']}"
+                    )
             lines.append("- " + " | ".join(meta))
         else:
             lines.append(f"- Size: {nbytes} bytes")
