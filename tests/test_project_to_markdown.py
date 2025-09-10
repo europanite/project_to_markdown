@@ -7,9 +7,10 @@ THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
 
 CANDIDATE_PATHS = [
-    THIS_DIR / "project_to_markdown.py",  
-    REPO_ROOT / "project_to_markdown.py", 
+    THIS_DIR / "project_to_markdown.py",
+    REPO_ROOT / "project_to_markdown.py",
 ]
+
 
 def load_module_and_get_main():
     for path in CANDIDATE_PATHS:
@@ -26,8 +27,7 @@ def load_module_and_get_main():
         return getattr(mod, "main")
     except Exception as e:
         raise FileNotFoundError(
-            "project_to_markdown.py not found in tests/ or repo root, "
-            "and import by name failed"
+            "project_to_markdown.py not found in tests/ or repo root, " "and import by name failed"
         ) from e
 
 
