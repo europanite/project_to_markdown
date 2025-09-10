@@ -619,11 +619,17 @@ def main():
         lines.append("## Python import graph (naive)\n")
         lines.append("```mermaid")
         lines.append("graph LR")
-        for file_path, imports in py_import_graph.items():
-            file_node = slugify(file_path)
-            for mod in sorted(imports):
-                mod_node = slugify(f"mod-{mod}")
-                lines.append(f'  {file_node}["{file_path}"] --> {mod_node}["{mod}"]')
+
+for file_path, imports in py_import_graph.items():
+    file_node = slugify(file_path)  
+
+for file_path, imports in py_import_graph.items():
+    file_path_str = str(file_path)
+    file_node = slugify(file_path_str)
+    for mod in sorted(imports):
+        mod_node = slugify(f"mod-{mod}")
+        lines.append(f'  {file_node}["{file_path_str}"] --> {mod_node}["{mod}"]')
+
         lines.append("```")
         lines.append("")
 
