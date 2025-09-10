@@ -1,4 +1,3 @@
-# project_to_markdown
 # [Project to Markdown](https://github.com/europanite/project_to_markdown "Project to Markdown")
 
 
