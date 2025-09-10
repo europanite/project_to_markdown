@@ -1,6 +1,12 @@
+import runpy
 import sys
 from pathlib import Path
-import runpy
+
+# Add the folder that contains BOTH this test and project_to_markdown.py
+THIS_DIR = Path(__file__).resolve().parent
+if str(THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(THIS_DIR))
+
 
 def run_script(tmp_path: Path, args: list[str]) -> Path:
     out = tmp_path / "out.md"
