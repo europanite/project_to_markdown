@@ -1,8 +1,6 @@
+import importlib
 import sys
 from pathlib import Path
-
-import importlib
-import types
 
 
 def run_script(tmp_path: Path, args: list[str]) -> Path:
@@ -58,9 +56,9 @@ def test_exclude_hidden_and_only_ext(tmp_path: Path):
         [
             "-r",
             str(proj),
-            "--exclude-hidden",   
+            "--exclude-hidden",
             "--only-ext",
-            ".txt",               
+            ".txt",
         ],
     )
     txt = out.read_text(encoding="utf-8")
@@ -77,7 +75,7 @@ def test_truncation_marker(tmp_path: Path):
 
     out = run_script(
         tmp_path,
-        ["-r", str(proj), "--max-bytes-per-file", "100"],  
+        ["-r", str(proj), "--max-bytes-per-file", "100"],
     )
     txt = out.read_text(encoding="utf-8")
     assert "[TRUNCATED due to max-bytes-per-file]" in txt
