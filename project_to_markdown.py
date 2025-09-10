@@ -2,12 +2,14 @@
 """
 project_to_markdown.py
 
-Dump an entire project into one Markdown file optimized for long-context LLM discussion (e.g., ChatGPT).
+Dump an entire project into one Markdown file 
+optimized for long-context LLM discussion (e.g., ChatGPT).
 
 What's new in this build:
 - Hidden files are INCLUDED by default.
 - New option `--exclude-hidden` to omit dotfiles/directories when desired.
-- Everything else: fenced content (including .md), overview, metrics, TOC, (optional) Python import graph,
+- Everything else: fenced content 
+(including .md), overview, metrics, TOC, (optional) Python import graph,
   truncation markers, dynamic default output filename (<project>_YYYYMMDD_HHMMSS.md).
 
 Usage (typical):
