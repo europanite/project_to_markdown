@@ -1,5 +1,19 @@
-#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import ast
+import fnmatch
+import hashlib
+import json
+import os
+import re
+import sys
+from collections import Counter, defaultdict
+from datetime import datetime
+from pathlib import Path
+
 # mypy: disable-error-code=no-untyped-def,var-annotated
+
 """
 project_to_markdown.py
 
@@ -18,20 +32,6 @@ Usage (typical):
     python project_to_markdown.py -r . --exclude-hidden
     python project_to_markdown.py -r . --mermaid-import-graph --no-summaries
 """
-
-from __future__ import annotations
-
-import argparse
-import ast
-import fnmatch
-import hashlib
-import json
-import os
-import re
-import sys
-from collections import Counter, defaultdict
-from datetime import datetime
-from pathlib import Path
 
 
 # -------------------------------------------------------------------

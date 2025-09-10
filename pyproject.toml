@@ -42,7 +42,9 @@ skip_covered = true
 [tool.ruff]
 line-length = 100
 target-version = "py39"
-select = ["E", "F", "I"] # Error, pyflakes, import sort
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 ignore = []
 
 [tool.black]
