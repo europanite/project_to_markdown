@@ -1,22 +1,19 @@
-import importlib
 import sys
 from pathlib import Path
-
+import runpy
 
 def run_script(tmp_path: Path, args: list[str]) -> Path:
     out = tmp_path / "out.md"
-    full_args = ["prog"] + args + ["-o", str(out)]
-    old_argv = sys.argv[:]
+    argv_backup = sys.argv[:]
     try:
-        sys.argv = full_args
-        mod = importlib.import_module("project_to_markdown")
-        mod = importlib.reload(mod)
-        rc = mod.main()
+        sys.argv = ["prog"] + args + ["-o", str(out)]
+        mod = runpy.run_path(str(THIS_DIR / "project_to_markdown.py"))
+        rc = mod["main"]()
         assert rc == 0
         assert out.exists()
         return out
     finally:
-        sys.argv = old_argv
+        sys.argv = argv_backup
 
 
 def test_basic_run_generates_output(tmp_path: Path, monkeypatch):
