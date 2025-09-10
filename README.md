@@ -1,4 +1,6 @@
 # project_to_markdown
+# [Project to Markdown](https://github.com/europanite/project_to_markdown "Project to Markdown")
+
 
 Export an entire multi-file project into **one Markdown file** that’s easy for long-context LLMs (e.g., ChatGPT) to read and reason about.
 
