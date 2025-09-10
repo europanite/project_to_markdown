@@ -12,7 +12,6 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
 
-# mypy: disable-error-code=no-untyped-def,var-annotated
 """
 project_to_markdown.py
 
