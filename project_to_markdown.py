@@ -54,61 +54,131 @@ DEFAULT_IGNORES = [
 ]
 
 EXT_TO_LANG = {
-    ".py": "python", ".ipynb": "json",
-    ".js": "javascript", ".jsx": "jsx",
-    ".ts": "typescript", ".tsx": "tsx",
-    ".json": "json", ".yml": "yaml", ".yaml": "yaml",
-    ".toml": "toml", ".ini": "ini", ".cfg": "ini",
-    ".sh": "bash", ".zsh": "bash", ".bash": "bash", ".ps1": "powershell",
-    ".rb": "ruby", ".go": "go", ".rs": "rust",
-    ".java": "java", ".kt": "kotlin", ".swift": "swift", ".php": "php",
-    ".c": "c", ".h": "c", ".hpp": "cpp", ".hh": "cpp",
-    ".cpp": "cpp", ".cc": "cpp", ".m": "objectivec", ".mm": "objectivec",
-    ".cs": "csharp", ".sql": "sql",
-    ".md": "markdown", ".html": "html", ".htm": "html",
-    ".css": "css", ".scss": "scss", ".less": "less",
-    ".vue": "vue", ".svelte": "svelte", ".xml": "xml",
-    ".gradle": "groovy", ".groovy": "groovy",
-    ".dockerfile": "dockerfile", "Dockerfile": "dockerfile",
-    ".dockerignore": "", ".env": "", ".txt": "", "": "",
+    ".py": "python",
+    ".ipynb": "json",
+    ".js": "javascript",
+    ".jsx": "jsx",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".json": "json",
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".toml": "toml",
+    ".ini": "ini",
+    ".cfg": "ini",
+    ".sh": "bash",
+    ".zsh": "bash",
+    ".bash": "bash",
+    ".ps1": "powershell",
+    ".rb": "ruby",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".kt": "kotlin",
+    ".swift": "swift",
+    ".php": "php",
+    ".c": "c",
+    ".h": "c",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".m": "objectivec",
+    ".mm": "objectivec",
+    ".cs": "csharp",
+    ".sql": "sql",
+    ".md": "markdown",
+    ".html": "html",
+    ".htm": "html",
+    ".css": "css",
+    ".scss": "scss",
+    ".less": "less",
+    ".vue": "vue",
+    ".svelte": "svelte",
+    ".xml": "xml",
+    ".gradle": "groovy",
+    ".groovy": "groovy",
+    ".dockerfile": "dockerfile",
+    "Dockerfile": "dockerfile",
+    ".dockerignore": "",
+    ".env": "",
+    ".txt": "",
+    "": "",
 }
 
 COMMENT_PREFIXES = {
-    "python": "#", "bash": "#", "ruby": "#", "ini": ";",
-    "json": "", "yaml": "#", "toml": "#",
-    "javascript": "//", "typescript": "//", "tsx": "//", "jsx": "//",
-    "java": "//", "c": "//", "cpp": "//", "csharp": "//",
-    "go": "//", "rust": "//", "php": "//", "swift": "//",
-    "kotlin": "//", "objectivec": "//", "sql": "--",
-    "html": "", "css": "", "markdown": "", "xml": "",
-    "dockerfile": "#", "groovy": "//",
+    "python": "#",
+    "bash": "#",
+    "ruby": "#",
+    "ini": ";",
+    "json": "",
+    "yaml": "#",
+    "toml": "#",
+    "javascript": "//",
+    "typescript": "//",
+    "tsx": "//",
+    "jsx": "//",
+    "java": "//",
+    "c": "//",
+    "cpp": "//",
+    "csharp": "//",
+    "go": "//",
+    "rust": "//",
+    "php": "//",
+    "swift": "//",
+    "kotlin": "//",
+    "objectivec": "//",
+    "sql": "--",
+    "html": "",
+    "css": "",
+    "markdown": "",
+    "xml": "",
+    "dockerfile": "#",
+    "groovy": "//",
 }
 
 # -------------------------------------------------------------------
 # CLI
 # -------------------------------------------------------------------
 
+
 def parse_args():
-    p = argparse.ArgumentParser(description="Extract project files into one Markdown for LLM discussion.")
+    p = argparse.ArgumentParser(
+        description="Extract project files into one Markdown for LLM discussion."
+    )
     p.add_argument("-r", "--root", required=True, help="Project root directory")
-    p.add_argument("-o", "--output", default=None, help="Output markdown (default: <project>_<ts>.md)")
-    p.add_argument("--ignore", action="append", default=[], help="Ignore patterns (glob + ** segment support)")
+    p.add_argument(
+        "-o", "--output", default=None, help="Output markdown (default: <project>_<ts>.md)"
+    )
+    p.add_argument(
+        "--ignore", action="append", default=[], help="Ignore patterns (glob + ** segment support)"
+    )
     p.add_argument("--exclude-hidden", action="store_true", help="Exclude dotfiles/directories")
-    p.add_argument("--max-bytes-per-file", type=int, default=300_000, help="Max bytes per file to include")
-    p.add_argument("--only-ext", action="append", default=[], help="Whitelist extensions (repeatable)")
+    p.add_argument(
+        "--max-bytes-per-file", type=int, default=300_000, help="Max bytes per file to include"
+    )
+    p.add_argument(
+        "--only-ext", action="append", default=[], help="Whitelist extensions (repeatable)"
+    )
     p.add_argument("--title", default=None, help="Top-level title")
-    p.add_argument("--md-policy", choices=["fence", "render", "skip"], default="fence",
-                   help="How to include project .md files")
+    p.add_argument(
+        "--md-policy",
+        choices=["fence", "render", "skip"],
+        default="fence",
+        help="How to include project .md files",
+    )
     p.add_argument("--top-n-largest", type=int, default=12, help="Show top-N largest/longest files")
-    p.add_argument("--mermaid-import-graph", action="store_true", help="Emit Mermaid graph for Python imports")
+    p.add_argument(
+        "--mermaid-import-graph", action="store_true", help="Emit Mermaid graph for Python imports"
+    )
     p.add_argument("--no-metrics", dest="with_metrics", action="store_false")
     p.add_argument("--no-summaries", dest="with_summaries", action="store_false")
     p.add_argument(
-    "--report-tag",
-    default="<!-- P2M_REPORT -->",
-    help="A line that marks a file as a generated report; such files are excluded. "
-         "Default: '<!-- P2M_REPORT -->'"
-)
+        "--report-tag",
+        default="<!-- P2M_REPORT -->",
+        help="A line that marks a file as a generated report; such files are excluded. "
+        "Default: '<!-- P2M_REPORT -->'",
+    )
     p.set_defaults(with_metrics=True, with_summaries=True)
     args = p.parse_args()
 
@@ -119,9 +189,11 @@ def parse_args():
         args.output = f"{proj}_{ts}.md"
     return args
 
+
 # -------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------
+
 
 def has_report_tag_head(p, tag, sniff_bytes=8192):
     try:
@@ -146,8 +218,10 @@ def has_report_tag_head(p, tag, sniff_bytes=8192):
 def norm_patterns(patterns):
     return [pat.strip() for pat in patterns if pat and pat.strip()]
 
+
 def is_hidden_path(path):
     return any(part.startswith(".") and part not in (".", "..") for part in path.parts)
+
 
 def rel_str(root, p):
     try:
@@ -155,6 +229,7 @@ def rel_str(root, p):
     except ValueError:
         s = str(p).replace(os.sep, "/")
     return "" if s == "." else s
+
 
 def _segment_match(s_rel, pattern):
     """
@@ -168,6 +243,7 @@ def _segment_match(s_rel, pattern):
         parts = s_rel.strip("/").split("/") if s_rel else []
         return core in parts
     return False
+
 
 def matches_ignore(root, rel_path, patterns):
     s = rel_path.replace(os.sep, "/").strip("/")
@@ -183,8 +259,10 @@ def matches_ignore(root, rel_path, patterns):
             return True
     return False
 
+
 def detect_language(path):
     return "dockerfile" if path.name == "Dockerfile" else EXT_TO_LANG.get(path.suffix, "")
+
 
 def is_probably_binary(sample):
     if b"\x00" in sample:
@@ -194,6 +272,7 @@ def is_probably_binary(sample):
         return False
     except UnicodeDecodeError:
         return True
+
 
 def read_text_safely(p, max_bytes):
     data = p.read_bytes()
@@ -207,8 +286,10 @@ def read_text_safely(p, max_bytes):
     text = data.decode("utf-8", errors="replace")
     return (text, truncated, nbytes)
 
+
 def sha1_of_text(s):
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
+
 
 def sloc_of_text(text, lang):
     com = COMMENT_PREFIXES.get(lang or "", None)
@@ -222,8 +303,10 @@ def sloc_of_text(text, lang):
         cnt += 1
     return cnt
 
+
 def count_todos(text):
     return len(re.findall(r"\bTODO\b|FIXME|XXX", text, flags=re.IGNORECASE))
+
 
 def extract_brief_description(text, lang, max_lines=5):
     t = text.lstrip()
@@ -239,7 +322,7 @@ def extract_brief_description(text, lang, max_lines=5):
         lines = []
         for line in text.splitlines():
             if line.strip().startswith(prefix):
-                cleaned = line.strip()[len(prefix):].lstrip()
+                cleaned = line.strip()[len(prefix) :].lstrip()
                 lines.append(cleaned)
                 if len(lines) >= max_lines:
                     break
@@ -252,6 +335,7 @@ def extract_brief_description(text, lang, max_lines=5):
         if out:
             return out
     return "\n".join(text.splitlines()[:2]).strip()
+
 
 def auto_summary(text, lang, max_len=200):
     if not text:
@@ -278,6 +362,7 @@ def auto_summary(text, lang, max_len=200):
             return line.strip()[:max_len]
     return ""
 
+
 def demote_markdown_headings(text, levels=3):
     if levels <= 0:
         return text
@@ -291,13 +376,15 @@ def demote_markdown_headings(text, levels=3):
             out.append(line)
     return "\n".join(out)
 
+
 def _natural_key(s):
-    return [int(t) if t.isdigit() else t.lower() for t in re.findall(r'\d+|\D+', str(s))]
+    return [int(t) if t.isdigit() else t.lower() for t in re.findall(r"\d+|\D+", str(s))]
+
 
 def build_tree(root, files):
     rel_files = [Path(p).relative_to(root) for p in files]
 
-    dir_children_dirs = {}   # parent_dir -> set(child_dir)
+    dir_children_dirs = {}  # parent_dir -> set(child_dir)
     dir_children_files = {}  # parent_dir -> list(child_file)
 
     def ensure_dir(d):
@@ -343,19 +430,21 @@ def build_tree(root, files):
             emit(d, next_prefix)
 
         for j, f in enumerate(subfiles):
-            is_last = (j == len(subfiles) - 1)
+            is_last = j == len(subfiles) - 1
             if not subdirs:
-                is_last = (j == len(subfiles) - 1)
+                is_last = j == len(subfiles) - 1
             branch = "└── " if (subdirs == [] and is_last) else ("└── " if is_last else "├── ")
             lines.append(prefix + branch + f.name)
 
     emit(Path("."))
     return "```\n" + "\n".join(lines) + "\n```"
 
+
 def slugify(path_like):
     s = re.sub(r"[^A-Za-z0-9/_\-.]+", "-", path_like)
     s = s.strip("-").replace("/", "-")
     return s or "file"
+
 
 def detect_dependencies(root):
     deps = {}
@@ -393,6 +482,7 @@ def detect_dependencies(root):
             pass
     return deps
 
+
 def python_imports(text):
     mods = set()
     for line in text.splitlines():
@@ -409,13 +499,16 @@ def python_imports(text):
             mods.add(first.split(".")[0])
     return mods
 
+
 def simple_cyclomatic_complexity_py(text):
     keywords = r"\b(if|elif|for|while|and|or|try|except|with|case)\b"
     return 1 + len(re.findall(keywords, text))
 
+
 # -------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------
+
 
 def main():
     args = parse_args()
@@ -444,9 +537,7 @@ def main():
     except ValueError:
         self_ignores = [this_script_name]
 
-    ignore_patterns = norm_patterns(
-        DEFAULT_IGNORES + self_ignores + args.ignore + dyn_ignores
-    )
+    ignore_patterns = norm_patterns(DEFAULT_IGNORES + self_ignores + args.ignore + dyn_ignores)
 
     files = []
     # Crucial: topdown=True so pruning affects traversal
@@ -630,7 +721,11 @@ def main():
                 f"SHA1: {str(r['sha1'])[:12]}",
             ]
             if lang == "python":
-                meta.append(f"Py: funcs={r['py_funcs']} classes={r['py_classes']} complexity≈{r['py_complex']}")
+                meta.append(
+                    f"Py: funcs={r['py_funcs']} \
+                      classes={r['py_classes']} \
+                      complexity≈{r['py_complex']}"
+                )
             lines.append("- " + " | ".join(meta))
         else:
             lines.append(f"- Size: {nbytes} bytes")
