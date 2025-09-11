@@ -40,10 +40,10 @@ Export an entire multi-file project into **one Markdown file** that’s easy for
 Just copy the script somewhere on your `PATH`:
 
 ```bash
+# Download the script into your project.
 curl -O https://raw.githubusercontent.com/europanite/project_to_markdown/main/project_to_markdown.py
-chmod +x project_to_markdown.py
-# Optionally move it into PATH:
-sudo mv project_to_markdown.py /usr/local/bin/project_to_markdown
+# Analize the project.
+python project_to_markdown.py -r .
 ```
 
 *(Or keep it in your repo and run with `python project_to_markdown.py`.)*
