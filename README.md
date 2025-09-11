@@ -40,13 +40,13 @@ Export an entire multi-file project into **one Markdown file** that’s easy for
 Just copy the script somewhere on your `PATH`:
 
 ```bash
-curl -O https://raw.githubusercontent.com/europanite/project_to_markdown/main/project_to_markdown.py
-chmod +x project_to_markdown.py
-# Optionally move it into PATH:
-sudo mv project_to_markdown.py /usr/local/bin/project_to_markdown
+# Download the script into your project.
+curl -O https://raw.githubusercontent.com/europanite/project_to_markdown/main/make_md.py
+# Analize the project.
+python make_md.py -r .
 ```
 
-*(Or keep it in your repo and run with `python project_to_markdown.py`.)*
+*(Or keep it in your repo and run with `python make_md.py`.)*
 
 ---
 
@@ -55,38 +55,38 @@ sudo mv project_to_markdown.py /usr/local/bin/project_to_markdown
 Basic:
 
 ```bash
-python project_to_markdown.py -r /path/to/project
+python make_md.py -r /path/to/project
 # => ./<project>_YYYYMMDD_HHMMSS.md
 ```
 
 Exclude hidden files:
 
 ```bash
-python project_to_markdown.py -r . --exclude-hidden
+python make_md.py -r . --exclude-hidden
 ```
 
 Only specific extensions:
 
 ```bash
-python project_to_markdown.py -r .   --only-ext .py --only-ext .md --only-ext .yml --only-ext .toml --only-ext .json
+python make_md.py -r .   --only-ext .py --only-ext .md --only-ext .yml --only-ext .toml --only-ext .json
 ```
 
 Render project Markdown instead of fencing:
 
 ```bash
-python project_to_markdown.py -r . --md-policy render
+python make_md.py -r . --md-policy render
 ```
 
 Add a Python import graph (Mermaid):
 
 ```bash
-python project_to_markdown.py -r . --mermaid-import-graph
+python make_md.py -r . --mermaid-import-graph
 ```
 
 Custom title & output:
 
 ```bash
-python project_to_markdown.py -r . --title "MyApp Export" -o myapp_dump.md
+python make_md.py -r . --title "MyApp Export" -o myapp_dump.md
 ```
 
 ---
