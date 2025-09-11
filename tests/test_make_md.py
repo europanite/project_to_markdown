@@ -7,8 +7,8 @@ THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
 
 CANDIDATE_PATHS = [
-    THIS_DIR / "project_to_markdown.py",
-    REPO_ROOT / "project_to_markdown.py",
+    THIS_DIR / "make_md.py",
+    REPO_ROOT / "make_md.py",
 ]
 
 
@@ -17,17 +17,17 @@ def load_module_and_get_main():
         if path.exists():
             mod_dict = runpy.run_path(str(path))
             main = mod_dict.get("main")
-            assert callable(main), "main() not found in project_to_markdown.py"
+            assert callable(main), "main() not found in make_md.py"
             return main
 
     if str(REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(REPO_ROOT))
     try:
-        mod = importlib.import_module("project_to_markdown")
+        mod = importlib.import_module("make_md")
         return getattr(mod, "main")
     except Exception as e:
         raise FileNotFoundError(
-            "project_to_markdown.py not found in tests/ or repo root, " "and import by name failed"
+            "make_md.py not found in tests/ or repo root, " "and import by name failed"
         ) from e
 
 
