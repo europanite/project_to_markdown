@@ -45,9 +45,6 @@ curl -O https://raw.githubusercontent.com/europanite/project_to_markdown/main/ma
 # Analize the project.
 python make_md.py -r .
 ```
-
-*(Or keep it in your repo and run with `python make_md.py`.)*
-
 ---
 
 ## Usage
