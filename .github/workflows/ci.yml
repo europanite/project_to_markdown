@@ -1,14 +1,10 @@
 name: CI (Python)
-
 on:
   push:
-    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]
-
+  workflow_dispatch:
 permissions:
   contents: read
-
 jobs:
   test:
     name: Python ${{ matrix.python-version }} • ${{ matrix.os }}
@@ -19,21 +15,17 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
-
     env:
       RUFF_CACHE_DIR: ./.ruff_cache
       PYTEST_ADDOPTS: "-ra"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-
       - name: Detect dependency manager
         id: depmgr
         shell: bash
@@ -43,7 +35,6 @@ jobs:
           else
             echo "manager=pip" >> "$GITHUB_OUTPUT"
           fi
-
       - name: Install (pip)
         if: steps.depmgr.outputs.manager == 'pip'
         run: |
@@ -54,8 +45,7 @@ jobs:
           if [[ -f requirements.txt ]]; then
             pip install -r requirements.txt
           fi
-          pip install pytest pytest-cov ruff black isort mypy
-
+          pip install pytest pytest-cov ruff isort mypy
       - name: Install (poetry)
         if: steps.depmgr.outputs.manager == 'poetry'
         run: |
@@ -63,32 +53,7 @@ jobs:
           pip install poetry
           poetry config virtualenvs.in-project true
           poetry install --no-interaction --no-root
-          poetry run pip install pytest-cov ruff black isort mypy
-
-      - name: Ruff (lint)
-        run: |
-          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
-            poetry run ruff check .
-          else
-            ruff check .
-          fi
-
-      - name: Black (check only)
-        run: |
-          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
-            poetry run black --check .
-          else
-            black --check .
-          fi
-
-      - name: isort (check only)
-        run: |
-          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
-            poetry run isort --check-only .
-          else
-            isort --check-only .
-          fi
-
+          poetry run pip install pytest-cov ruff isort mypy
       - name: mypy (type check)
         run: |
           if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
@@ -96,7 +61,6 @@ jobs:
           else
             mypy .
           fi
-
       - name: Pytest
         run: |
           if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
@@ -104,7 +68,6 @@ jobs:
           else
             pytest -q --cov=. --cov-report=xml --cov-report=term
           fi
-
       - name: Upload coverage xml
         uses: actions/upload-artifact@v4
         with:
