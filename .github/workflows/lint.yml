@@ -10,13 +10,19 @@ permissions:
   security-events: write
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    name: Python ${{ matrix.python-version }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
       - name: Install tools
         run: |
