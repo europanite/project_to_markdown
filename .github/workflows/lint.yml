@@ -21,10 +21,10 @@ jobs:
           python -m pip install -U pip
           pip install ruff
       - name: Ruff (lint)
-        run: ruff check backend/app backend/tests
+        run: ruff check .
       - name: Ruff SARIF
         if: always()
-        run: ruff check --output-format sarif backend/app backend/tests > ruff.sarif || true
+        run: ruff check --output-format sarif . > ruff.sarif || true
       - name: Upload SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
