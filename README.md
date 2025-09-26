@@ -1,6 +1,6 @@
 # [Project to Markdown](https://github.com/europanite/project_to_markdown "Project to Markdown")
 
-[![CI (Python)](https://github.com/europanite/project_to_markdown/actions/workflows/ci.yml/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/ci.yml)
+[![CI](https://github.com/europanite/project_to_markdown/actions/workflows/ci.yml/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/ci.yml)
 [![Python Lint](https://github.com/europanite/project_to_markdown/actions/workflows/lint.yml/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/lint.yml)
 [![pages-build-deployment](https://github.com/europanite/project_to_markdown/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/pages/pages-build-deployment)
 
