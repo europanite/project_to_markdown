@@ -1,2 +1,10 @@
+title: "project_to_markdown"
+description: "Project Documentation"
+baseurl: "/project_to_markdown"
+url: "https://europanite.github.io"
+theme: minima
+markdown: kramdown
 plugins:
+  - jekyll-feed
   - jekyll-sitemap
+highlighter: rouge

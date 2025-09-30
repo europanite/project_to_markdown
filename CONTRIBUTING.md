@@ -22,3 +22,4 @@ Please follow the guidelines below to make the process smooth for everyone.
 1. Fork the repository and create a new branch:
    ```bash
    git checkout -b feature/your-feature-name
+   ```

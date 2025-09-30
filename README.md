@@ -4,6 +4,8 @@
 [![Python Lint](https://github.com/europanite/project_to_markdown/actions/workflows/lint.yml/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/lint.yml)
 [![pages-build-deployment](https://github.com/europanite/project_to_markdown/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/europanite/project_to_markdown/actions/workflows/pages/pages-build-deployment)
 
+Project Documentation.
+
 Export an entire multi-file project into **one Markdown file** that’s easy for long-context LLMs (e.g., ChatGPT) to read and reason about.
 
 - Makes code review, refactoring, and architecture discussions frictionless

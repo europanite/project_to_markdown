@@ -5,8 +5,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
-permissions:
-  contents: read
 jobs:
   test:
     name: Python ${{ matrix.python-version }} • ${{ matrix.os }}
@@ -32,44 +30,18 @@ jobs:
         id: depmgr
         shell: bash
         run: |
-          if [[ -f "poetry.lock" ]]; then
-            echo "manager=poetry" >> "$GITHUB_OUTPUT"
-          else
-            echo "manager=pip" >> "$GITHUB_OUTPUT"
-          fi
+          echo "manager=pip" >> "$GITHUB_OUTPUT"
       - name: Install (pip)
-        if: steps.depmgr.outputs.manager == 'pip'
         run: |
           python -m pip install --upgrade pip
-          if [[ -f requirements-dev.txt ]]; then
-            pip install -r requirements-dev.txt
-          fi
-          if [[ -f requirements.txt ]]; then
-            pip install -r requirements.txt
-          fi
-          pip install pytest pytest-cov ruff isort mypy
-      - name: Install (poetry)
-        if: steps.depmgr.outputs.manager == 'poetry'
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction --no-root
-          poetry run pip install pytest-cov ruff isort mypy
+          pip install -r requirements.txt
+          pip install -r requirements.test.txt
       - name: mypy (type check)
         run: |
-          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
-            poetry run mypy .
-          else
-            mypy .
-          fi
+          mypy .
       - name: Pytest
         run: |
-          if [[ "${{ steps.depmgr.outputs.manager }}" == "poetry" ]]; then
-            poetry run pytest -q --cov=. --cov-report=xml --cov-report=term
-          else
-            pytest -q --cov=. --cov-report=xml --cov-report=term
-          fi
+          pytest -q --cov=. --cov-report=xml --cov-report=term
       - name: Upload coverage xml
         uses: actions/upload-artifact@v4
         with:
