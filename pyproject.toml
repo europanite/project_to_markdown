@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "your_project_name"
+name = "project_to_markdown"
 version = "0.1.0"
 description = "Your project description"
 readme = "README.md"
@@ -27,7 +27,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["your_project_name"]
+source = ["project_to_markdown"]
 
 [tool.coverage.report]
 show_missing = true
