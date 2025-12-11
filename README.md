@@ -94,6 +94,24 @@ python make_md.py -r . --title "MyApp Export" -o myapp_dump.md
 
 ---
 
+### Test
+
+```bash
+python3 -m venv env
+source env/bin/activate
+pip install -r requirements.test.txt
+pytest
+```
+
+### Deactivate environment
+
+```bash
+deactivate
+```
+
+---
+
+
 ## Options
 
 ```text
