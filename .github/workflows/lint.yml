@@ -3,8 +3,7 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+
 permissions:
   security-events: write
 jobs:
@@ -15,11 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13", "3.14" ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -34,6 +33,6 @@ jobs:
         if: always()
         run: ruff check --output-format sarif . > ruff.sarif || true
       - name: Upload SARIF to Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ruff.sarif
