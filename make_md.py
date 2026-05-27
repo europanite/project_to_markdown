@@ -32,6 +32,8 @@ Key points in this build:
 # Defaults
 # -------------------------------------------------------------------
 
+PROJECT_IGNORE_FILES = (".gitignore", ".dockerignore")
+
 DEFAULT_IGNORES = [
     "**/.git/**",
     "**/.hg/**",
@@ -151,6 +153,11 @@ def parse_args():
     p.add_argument(
         "--ignore", action="append", default=[], help="Ignore patterns (glob + ** segment support)"
     )
+    p.add_argument(
+        "--no-project-ignore-files",
+        action="store_true",
+        help="Do not import ignore patterns from <root>/.gitignore and <root>/.dockerignore",
+    )
     p.add_argument("--exclude-hidden", action="store_true", help="Exclude dotfiles/directories")
     p.add_argument(
         "--max-bytes-per-file", type=int, default=300_000, help="Max bytes per file to include"
@@ -217,6 +224,75 @@ def norm_patterns(patterns):
     return [pat.strip() for pat in patterns if pat and pat.strip()]
 
 
+def _unescape_project_ignore_pattern(pattern):
+    if pattern.startswith((r"\#", r"\!")):
+        return pattern[1:]
+    return pattern
+
+
+def expand_project_ignore_pattern(pattern):
+    """
+    Convert one .gitignore/.dockerignore-style line into patterns that the
+    existing matcher can consume.
+
+    This intentionally imports ignore rules only. Negation rules are skipped
+    because the current matcher is a positive ignore list, not an ordered
+    gitignore engine.
+    """
+    line = pattern.strip()
+    if not line or line == "." or line.startswith("#") or line.startswith("!"):
+        return []
+
+    line = _unescape_project_ignore_pattern(line)
+    line = line.replace(os.sep, "/")
+
+    anchored = line.startswith("/")
+    prefix = "/" if anchored else ""
+    line = line.lstrip("/")
+    if not line:
+        return []
+
+    directory_rule = line.endswith("/")
+    line = line.rstrip("/")
+    if not line:
+        return []
+
+    variants = [f"{prefix}{line}"]
+    if directory_rule:
+        variants.append(f"{prefix}{line}/**")
+        if not anchored and "/" not in line:
+            variants.append(f"**/{line}/**")
+    return variants
+
+
+def load_project_ignore_patterns(root):
+    patterns = []
+    sources = []
+
+    for name in PROJECT_IGNORE_FILES:
+        ignore_file = root / name
+        if not ignore_file.is_file():
+            continue
+
+        loaded = []
+        try:
+            text = ignore_file.read_text(encoding="utf-8", errors="replace")
+        except Exception as exc:
+            print(f"[WARN] Could not read {ignore_file}: {exc}", file=sys.stderr)
+            continue
+
+        for raw_line in text.splitlines():
+            line = raw_line.rstrip("\n\r")
+            loaded.extend(expand_project_ignore_pattern(line))
+
+        loaded = norm_patterns(loaded)
+        if loaded:
+            patterns.extend(loaded)
+            sources.append((name, len(loaded)))
+
+    return patterns, sources
+
+
 def is_hidden_path(path):
     return any(part.startswith(".") and part not in (".", "..") for part in path.parts)
 
@@ -248,12 +324,16 @@ def matches_ignore(root, rel_path, patterns):
     base = s.rsplit("/", 1)[-1] if s else ""
 
     for pat in patterns:
-        pat_n = pat.replace(os.sep, "/").strip("/")
-        if _segment_match(s, pat_n):
+        raw_pat = pat.replace(os.sep, "/").strip()
+        anchored = raw_pat.startswith("/")
+        pat_n = raw_pat.lstrip("/").strip("/")
+        if not pat_n:
+            continue
+        if not anchored and _segment_match(s, pat_n):
             return True
         if fnmatch.fnmatchcase(s, pat_n):
             return True
-        if base and fnmatch.fnmatchcase(base, pat_n):
+        if not anchored and base and fnmatch.fnmatchcase(base, pat_n):
             return True
     return False
 
@@ -535,7 +615,18 @@ def main():
     except ValueError:
         self_ignores = [this_script_name]
 
-    ignore_patterns = norm_patterns(DEFAULT_IGNORES + self_ignores + args.ignore + dyn_ignores)
+    project_ignore_patterns = []
+    project_ignore_sources = []
+    if not args.no_project_ignore_files:
+        project_ignore_patterns, project_ignore_sources = load_project_ignore_patterns(root)
+
+    ignore_patterns = norm_patterns(
+        DEFAULT_IGNORES
+        + project_ignore_patterns
+        + self_ignores
+        + args.ignore
+        + dyn_ignores
+    )
 
     files = []
     # Crucial: topdown=True so pruning affects traversal
@@ -643,6 +734,11 @@ def main():
     lines.append(f"- Root: `{root}`")
     lines.append(f"- Files: **{len(file_records)}**")
     lines.append(f"- Total size: **{total_bytes} bytes**")
+    if project_ignore_sources:
+        src_text = ", ".join(
+            f"`{name}` ({count} patterns)" for name, count in project_ignore_sources
+        )
+        lines.append(f"- Project ignore files: {src_text}")
     if args.with_metrics:
         lines.append(f"- Total LOC: {total_loc} | SLOC: {total_sloc} | TODOs: {total_todos}")
     lines.append("")
