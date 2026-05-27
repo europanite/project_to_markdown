@@ -44,6 +44,88 @@ Export an entire multi-file project into **one Markdown file** that’s easy for
 
 ---
 
+
+## Project ignore files
+
+By default, `make_md.py` reads these files from the directory passed to `--root`:
+
+- `.gitignore`
+- `.dockerignore`
+
+Patterns imported from those files are merged into the built-in ignore list before `os.walk()` starts. This means ignored directories can be pruned before traversal.
+
+Supported project-ignore behavior:
+
+- Blank lines are ignored.
+- Lines beginning with `#` are treated as comments.
+- Escaped leading `\#` and `\!` are treated as literal `#` and `!` patterns.
+- Directory rules ending with `/` are expanded so that their descendants are ignored.
+- Leading `/` keeps a pattern anchored to the `--root` directory.
+- Positive ignore patterns are imported.
+
+Negation rules beginning with `!` are skipped. The exporter uses a positive ignore list rather than a full ordered gitignore engine, so importing negation rules directly would be unsafe.
+
+To disable project ignore file loading:
+
+```bash
+python make_md.py --root /path/to/project --no-project-ignore-files
+```
+
+## Additional ignore patterns
+
+Use `--ignore` to add patterns manually:
+
+```bash
+python make_md.py --root /path/to/project --ignore "**/logs/**" --ignore "*.sqlite"
+```
+
+The matcher supports standard glob matching plus a segment rule such as:
+
+```text
+**/node_modules/**
+```
+
+That form matches any path containing a `node_modules` segment.
+
+## Useful options
+
+```bash
+python make_md.py \
+  --root /path/to/project \
+  --output project_export.md \
+  --max-bytes-per-file 300000 \
+  --md-policy fence \
+  --mermaid-import-graph
+```
+
+Common options:
+
+- `--root`: target project directory. Required.
+- `--output`: output Markdown path.
+- `--ignore`: extra ignore pattern. Can be repeated.
+- `--no-project-ignore-files`: do not load `<root>/.gitignore` or `<root>/.dockerignore`.
+- `--exclude-hidden`: exclude dotfiles and dot-directories.
+- `--max-bytes-per-file`: maximum bytes included per file.
+- `--only-ext`: include only files with a specific extension. Can be repeated.
+- `--md-policy fence|render|skip`: controls how Markdown files are included.
+- `--mermaid-import-graph`: emits a simple Mermaid graph for Python imports.
+- `--no-metrics`: disables metrics in the output.
+- `--no-summaries`: disables auto summaries.
+
+## Example
+
+```bash
+python make_md.py \
+  --root . \
+  --output latest_project_export.md \
+  --ignore "*.log" \
+  --ignore "**/tmp/**"
+```
+
+This command exports the current directory, applies the built-in ignore rules, imports `.gitignore` and `.dockerignore` from the current directory, adds two extra ignore patterns, and writes `latest_project_export.md`.
+
+---
+
 ## Installation
 
 Just copy the script somewhere on your `PATH`:
@@ -54,47 +136,6 @@ curl -O https://raw.githubusercontent.com/europanite/project_to_markdown/main/ma
 # Analize the project.
 python make_md.py -r .
 ```
----
-
-## Usage
-
-Basic:
-
-```bash
-python make_md.py -r /path/to/project
-# => ./<project>_YYYYMMDD_HHMMSS.md
-```
-
-Exclude hidden files:
-
-```bash
-python make_md.py -r . --exclude-hidden
-```
-
-Only specific extensions:
-
-```bash
-python make_md.py -r .   --only-ext .py --only-ext .md --only-ext .yml --only-ext .toml --only-ext .json
-```
-
-Render project Markdown instead of fencing:
-
-```bash
-python make_md.py -r . --md-policy render
-```
-
-Add a Python import graph (Mermaid):
-
-```bash
-python make_md.py -r . --mermaid-import-graph
-```
-
-Custom title & output:
-
-```bash
-python make_md.py -r . --title "MyApp Export" -o myapp_dump.md
-```
-
 ---
 
 ### Test
@@ -159,3 +200,5 @@ deactivate
 ## License
 
 - Apache License 2.0
+
+
