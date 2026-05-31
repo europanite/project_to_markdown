@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import warnings
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -44,6 +45,7 @@ DEFAULT_IGNORES = [
     "**/node_modules/**",
     "**/dist/**",
     "**/build/**",
+    "**/target/**",
     "**/.venv/**",
     "**/venv/**",
     "**/cache/**",
@@ -353,12 +355,23 @@ def is_probably_binary(sample):
 
 
 def read_text_safely(p, max_bytes):
-    data = p.read_bytes()
-    nbytes = len(data)
-    truncated = False
-    if nbytes > max_bytes:
+    """Read at most max_bytes from a regular file.
+
+    The old implementation used Path.read_bytes(), which reads the entire
+    file before truncating it. That is slow for large binaries and can crash
+    on special files such as sockets, FIFOs, devices, or broken symlinks.
+    """
+    try:
+        st = p.stat()
+        nbytes = st.st_size
+        with p.open("rb") as f:
+            data = f.read(max_bytes + 1)
+    except OSError as exc:
+        raise OSError(f"Could not read {p}: {exc}") from exc
+
+    truncated = len(data) > max_bytes
+    if truncated:
         data = data[:max_bytes]
-        truncated = True
     if is_probably_binary(data[:4096]):
         return ("", False, nbytes)
     text = data.decode("utf-8", errors="replace")
@@ -653,8 +666,11 @@ def main():
                 continue
             if args.exclude_hidden and fn.startswith("."):
                 continue
-            if p.is_dir():
-                continue  # normally filenames has no dirs, but keep safe
+            try:
+                if not p.is_file():
+                    continue  # skip sockets, FIFOs, devices, broken symlinks, etc.
+            except OSError:
+                continue
             if has_report_tag_head(p, args.report_tag):
                 continue
             if args.only_ext and (p.suffix not in args.only_ext and p.name != "Dockerfile"):
@@ -669,20 +685,28 @@ def main():
 
     for p in files:
         lang = detect_language(p)
-        text, truncated, nbytes = read_text_safely(p, args.max_bytes_per_file)
+        try:
+            st = p.stat()
+            text, truncated, nbytes = read_text_safely(p, args.max_bytes_per_file)
+        except OSError as exc:
+            print(f"[WARN] Skipping unreadable file {p}: {exc}", file=sys.stderr)
+            continue
+
         total_bytes += nbytes
         lang_counter[lang or "plain"] += 1
 
         loc = len(text.splitlines()) if text else 0
         sloc = sloc_of_text(text, lang) if text else 0
         todos = count_todos(text) if text else 0
-        mtime = datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        mtime = datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         digest = sha1_of_text(text) if text else ""
 
         py_funcs = py_classes = py_complex = 0
         if lang == "python" and text:
             try:
-                tree = ast.parse(text)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    tree = ast.parse(text, filename=str(p))
                 py_funcs = sum(isinstance(n, ast.FunctionDef) for n in ast.walk(tree))
                 py_classes = sum(isinstance(n, ast.ClassDef) for n in ast.walk(tree))
             except Exception:
