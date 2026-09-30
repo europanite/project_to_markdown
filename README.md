@@ -44,6 +44,13 @@ Export an entire multi-file project into **one Markdown file** that’s easy for
 
 ---
 
+## Installation
+
+```bash
+python3 -m venv env
+source env/bin/activate
+pip install -r requirements.test.txt
+```
 
 ## Project ignore files
 
